@@ -1,5 +1,5 @@
-using Bukimedia.PrestaSharp.Deserializers;
-using Bukimedia.PrestaSharp.Lib;
+using SynchroCiel.Deserializers;
+using SynchroCiel.Lib;
 using RestSharp;
 using System;
 using System.Collections.Generic;
@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using RestSharp.Authenticators;
 
-namespace Bukimedia.PrestaSharp.Factories
+namespace SynchroCiel
 {
     public abstract class RestSharpFactory
     {
@@ -21,8 +21,8 @@ namespace Bukimedia.PrestaSharp.Factories
 
         public RestSharpFactory(string BaseUrl, string Account, string Password)
         {
-            this.BaseUrl = BaseUrl;
-            this.Account = Account;
+            this.BaseUrl = WebServiceData.BaseUrlWebService;
+            this.Account = WebServiceData.AccountwebService;
             this.Password = Password;
         }
 
@@ -33,10 +33,12 @@ namespace Bukimedia.PrestaSharp.Factories
             client.BaseUrl = new Uri(this.BaseUrl);
             //client.Authenticator = new HttpBasicAuthenticator(this.Account, this.Password);
             Request.AddParameter("ws_key", this.Account, ParameterType.QueryString); // used on every request
+           
             if (Request.Method == Method.GET)
             {
+                //Console.WriteLine("methode get");
                 client.ClearHandlers();
-                client.AddHandler("text/xml", new Bukimedia.PrestaSharp.Deserializers.PrestaSharpDeserializer());
+                client.AddHandler("text/xml", new PrestaSharpDeserializer());
             }
             var response = client.Execute<T>(Request);
             if (response.StatusCode == HttpStatusCode.InternalServerError
@@ -49,7 +51,7 @@ namespace Bukimedia.PrestaSharp.Factories
                 || response.StatusCode == 0)
             {
                 string RequestParameters = Environment.NewLine;
-                foreach (RestSharp.Parameter Parameter in Request.Parameters)
+                foreach (Parameter Parameter in Request.Parameters)
                 {
                     RequestParameters += Parameter.Value + Environment.NewLine + Environment.NewLine;
                 }
@@ -89,8 +91,9 @@ namespace Bukimedia.PrestaSharp.Factories
             //client.Authenticator = new HttpBasicAuthenticator(this.Account, this.Password);
             Request.AddParameter("ws_key", this.Account, ParameterType.QueryString); // used on every request
             client.ClearHandlers();
-            client.AddHandler("text/xml", new Bukimedia.PrestaSharp.Deserializers.PrestaSharpDeserializer());
+            client.AddHandler("text/xml", new PrestaSharpDeserializer());
             var response = client.Execute<T>(Request);
+            
             if (response.StatusCode == HttpStatusCode.InternalServerError
                 || response.StatusCode == HttpStatusCode.ServiceUnavailable
                 || response.StatusCode == HttpStatusCode.BadRequest
@@ -101,11 +104,12 @@ namespace Bukimedia.PrestaSharp.Factories
                 || response.StatusCode == 0)
             {
                 string RequestParameters = Environment.NewLine;
-                foreach (RestSharp.Parameter Parameter in Request.Parameters)
+                foreach (Parameter Parameter in Request.Parameters)
                 {
                     RequestParameters += Parameter.Value + Environment.NewLine + Environment.NewLine;
                 }
                 var Exception = new PrestaSharpException(RequestParameters + response.Content, response.ErrorMessage, response.StatusCode, response.ErrorException);
+                
                 throw Exception;
             }
             return response.Data;
@@ -173,7 +177,7 @@ namespace Bukimedia.PrestaSharp.Factories
             request.Resource = Resource;
             request.Method = Method.POST;
             request.RequestFormat = DataFormat.Xml;
-            //Hack implementation in PrestaSharpSerializer to serialize PrestaSharp.Entities.AuxEntities.language
+            //Hack implementation in PrestaSharpSerializer to serialize SynchroCiel.Entities.AuxEntities.language
             request.XmlSerializer = new Serializers.PrestaSharpSerializer();
             string serialized = "";
             foreach (Entities.PrestaShopEntity Entity in Entities)
@@ -261,12 +265,25 @@ namespace Bukimedia.PrestaSharp.Factories
             request.RequestFormat = DataFormat.Xml;
             request.XmlSerializer = new RestSharp.Serializers.DotNetXmlSerializer();
             request.AddBody(PrestashopEntity);
+           
             //issue #81, #54 fixed
             request.Parameters[1].Value = Functions.ReplaceFirstOccurrence(request.Parameters[1].Value.ToString(), "<" + PrestashopEntity.GetType().Name + ">", "<prestashop>\n<" + PrestashopEntity.GetType().Name + ">");
             request.Parameters[1].Value = Functions.ReplaceLastOccurrence(request.Parameters[1].Value.ToString(), "</" + PrestashopEntity.GetType().Name + ">", "</" + PrestashopEntity.GetType().Name + ">\n</prestashop>");
             //issue #36 fixed
-            request.Parameters[1].Value = request.Parameters[1].Value.ToString().Replace(" xmlns=\"Bukimedia/PrestaSharp/Entities\"", "");// "xmlns=\"\"");
-            request.Parameters[1].Value = request.Parameters[1].Value.ToString().Replace(" xmlns=\"Bukimedia/PrestaSharp/Entities/AuxEntities\"", "");// "xmlns=\"\"");
+            request.Parameters[1].Value = request.Parameters[1].Value.ToString().Replace(" xmlns=\"SynchroCiel/Entities\"", "");// "xmlns=\"\"");
+            request.Parameters[1].Value = request.Parameters[1].Value.ToString().Replace(" xmlns=\"SynchroCiel/Entities/AuxEntities\"", "");// "xmlns=\"\"");
+            request.Parameters[1].Value = request.Parameters[1].Value.ToString().Replace("<Value>", "");
+            request.Parameters[1].Value = request.Parameters[1].Value.ToString().Replace("</Value>", "");
+            
+            string RequestPostParameters = "";
+           
+            foreach (Parameter Parameter in request.Parameters)
+            {
+                RequestPostParameters += Parameter.Value;
+               
+              
+            }
+            
             return request;
         }
        // For Update List Of Products - start
