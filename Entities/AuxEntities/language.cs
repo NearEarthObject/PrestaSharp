@@ -8,11 +8,11 @@ using System.Xml.Serialization;
 using RestSharp.Serializers;
 using System.Runtime.Serialization;
 
-namespace Bukimedia.PrestaSharp.Entities.AuxEntities
+namespace SynchroCiel.Entities.AuxEntities
 {
     [Serializable]
     [DataContract]
-    [XmlType(Namespace = "Bukimedia/PrestaSharp/Entities/AuxEntities")]
+    [XmlType(Namespace = "SynchroCiel/Entities/AuxEntities")]
     public class language: PrestaShopEntity
     {
         [XmlAttribute]
@@ -20,7 +20,7 @@ namespace Bukimedia.PrestaSharp.Entities.AuxEntities
         public long id { get; set; }
 
         // Value is reserved word from RestSharp for loading the CDATA content from the XML file.
-        [XmlTextAttribute]
+        //[XmlAttribute]
         [DataMember]
         public string Value { get; set; }
 
